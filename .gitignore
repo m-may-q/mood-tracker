@@ -1,0 +1,9 @@
+# Редактор
+.vscode/
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Node (на випадок майбутніх практикумів)
+node_modules/
