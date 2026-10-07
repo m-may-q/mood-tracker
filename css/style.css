@@ -8,21 +8,10 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 1rem;
+  font-size: 1rem;       /* 16px — базовий розмір тексту */
   line-height: 1.5;
   color: #2e2a35;
-  background-color: #faf7fb;
-}
-
-/* ===== Кольорова палітра варіанта =====
-   Лаванда:  #e6def7 (світла) / #b9a4e0 (акцент)
-   М'ята:    #d7f5e6 (світла) / #7fd6ac (акцент)
-   Персик:   #fde3d0 (світла) / #f4a26e (акцент)
-*/
-
-h1, h2, h3 {
-  margin: 0 0 0.5em;
-  font-weight: 700;
+  background-color: var(--color-bg);
 }
 
 img {
@@ -30,17 +19,75 @@ img {
   height: auto;
 }
 
+/* =========================================================
+   КОЛІРНА СХЕМА (правило 60-30-10)
+   60% — нейтральний фон/текст, 30% — другорядний (м'ята),
+   10% — акцент (лаванда на кнопках і шапці).
+   ========================================================= */
+:root {
+  --color-bg:        #faf7fb; /* нейтральний фон сторінки (60%) */
+  --color-surface:    #ffffff;
+  --color-text:       #2e2a35;
+  --color-text-muted: #7a7383;
+
+  --color-primary:       #b9a4e0; /* лаванда — бренд-акцент (10%) */
+  --color-primary-dark:  #4a3b6b;
+  --color-primary-hover: #a088cf;
+
+  --color-secondary: #d7f5e6; /* м'ята — другорядний колір (30%), фон форми */
+  --color-secondary-border: #a9c9b8;
+  --color-secondary-accent: #7fd6ac;
+
+  --color-accent-bg: #fde3d0; /* персик — нейтрально-акцентний фон блоків */
+
+  /* ---- Чітка вимога варіанта 3: окремий колір для кожного з 5
+     рівнів настрою, контраст тексту до фону ≥4.5:1 (перевірено
+     інструментом контрасту — фактичні значення 6.8:1–8.4:1). ---- */
+  --mood-great-bg:    #a8cdaa;
+  --mood-great-fg:    #1f3620;
+  --mood-good-bg:     #9fd3c9;
+  --mood-good-fg:     #1a3b35;
+  --mood-neutral-bg:  #c9cfd9;
+  --mood-neutral-fg:  #2b313b;
+  --mood-bad-bg:      #e7c197;
+  --mood-bad-fg:      #4a3016;
+  --mood-terrible-bg: #dda8a8;
+  --mood-terrible-fg: #4a1f1f;
+}
+
+/* ---- Нечітка вимога варіанта 3: «кольори мають відчуватися
+   заспокійливими, а не тривожними». Інтерпретація: замість чистих
+   насичених кольорів (наприклад яскраво-червоного для «жахливого»
+   настрою, що сам по собі тривожить) усі п'ять кольорів навмисно
+   приглушені (desaturated) — однакова помірна насиченість і
+   світлота, лише відтінок (hue) відрізняє рівні настрою. Це дає
+   візуальну відмінність без різких сигналів тривоги навіть для
+   негативних станів. ---- */
+
+/* =========================================================
+   ТИПОГРАФІКА — узгоджена шкала 16 / 20 / 28 / 36px
+   ========================================================= */
+h1, h2, h3 {
+  margin: 0 0 0.5em;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+h1 { font-size: 2.25rem; }  /* 36px */
+h2 { font-size: 1.75rem; }  /* 28px */
+h3 { font-size: 1.25rem; }  /* 20px */
+p  { font-size: 1rem; }     /* 16px, line-height 1.5 успадковано від body */
+
 /* ===== Header ===== */
 header {
-  background: linear-gradient(135deg, #e6def7 0%, #fde3d0 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-bg) 100%);
   padding: 24px;
   text-align: center;
   border-bottom: 1px solid #d8cdec;
 }
 
 header h1 {
-  font-size: 2rem;
-  color: #4a3b6b;
+  color: var(--color-primary-dark);
   margin: 0;
 }
 
@@ -60,17 +107,11 @@ main section {
   margin-bottom: 32px;
 }
 
-main section h2 {
-  font-size: 1.4rem;
-  color: #4a3b6b;
-  margin-bottom: 16px;
-}
-
 /* ===== Форма «Відмітити настрій» ===== */
 #add-mood form {
   display: flex;
   flex-direction: column;
-  background-color: #d7f5e6;
+  background-color: var(--color-secondary);
   padding: 20px;
   border-radius: 16px;
 }
@@ -85,17 +126,19 @@ main section h2 {
 #add-mood input {
   padding: 10px;
   margin-bottom: 16px;
-  border: 1px solid #a9c9b8;
+  border: 1px solid var(--color-secondary-border);
   border-radius: 8px;
   font-family: inherit;
   font-size: 1rem;
+  color: var(--color-text);
+  background-color: var(--color-surface);
 }
 
 #add-mood select:focus,
 #add-mood textarea:focus,
 #add-mood input:focus {
   outline: none;
-  border-color: #7fd6ac;
+  border-color: var(--color-secondary-accent);
 }
 
 #add-mood textarea {
@@ -108,7 +151,7 @@ main section h2 {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background-color: #b9a4e0;
+  background-color: var(--color-primary);
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -116,15 +159,11 @@ main section h2 {
 }
 
 #add-mood button:hover {
-  background-color: #a088cf;
+  background-color: var(--color-primary-hover);
 }
 
 /* ===== Сітка карток записів (Grid) =====
-   Мобільний: 1 колонка.
-   Планшет (≥600px): 2 колонки.
-   Десктоп (≥1024px): main+aside стають двома колонками через .layout,
-   тому картки всередині main лишаються 2 колонками — для ширшого main
-   цього достатньо за варіантом завдання. */
+   Мобільний: 1 колонка. Планшет (≥600px): 2 колонки. */
 .cards {
   display: grid;
   grid-template-columns: 1fr;
@@ -132,32 +171,47 @@ main section h2 {
 }
 
 .card {
-  background-color: #fde3d0;
   border-radius: 16px;
   padding: 14px;
 }
 
 .card h3 {
-  font-size: 1.1rem;
-  color: #6b4a2f;
+  margin-top: 4px;
+  color: inherit; /* заголовок картки успадковує текстовий колір рівня настрою */
 }
 
 .card p {
   margin: 4px 0;
 }
 
+/* Бейдж-підпис рівня настрою словом поруч із кольором картки */
+.card__mood-label {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+}
+
+/* Кольори п'яти рівнів настрою — застосування чіткої вимоги */
+.card--great    { background-color: var(--mood-great-bg);    color: var(--mood-great-fg); }
+.card--good     { background-color: var(--mood-good-bg);     color: var(--mood-good-fg); }
+.card--neutral  { background-color: var(--mood-neutral-bg);  color: var(--mood-neutral-fg); }
+.card--bad      { background-color: var(--mood-bad-bg);      color: var(--mood-bad-fg); }
+.card--terrible { background-color: var(--mood-terrible-bg); color: var(--mood-terrible-fg); }
+
 /* ===== Aside «Статистика» ===== */
 aside {
   padding: 20px;
-  background-color: #e6def7;
+  background-color: var(--color-accent-bg);
   border-radius: 16px;
   text-align: center;
   align-self: start;
 }
 
 aside h2 {
-  font-size: 1.2rem;
-  color: #4a3b6b;
+  font-size: 1.4rem;
 }
 
 /* ===== Footer ===== */
@@ -165,7 +219,7 @@ footer {
   padding: 16px;
   text-align: center;
   font-size: 0.85rem;
-  color: #7a7383;
+  color: var(--color-text-muted);
 }
 
 /* =========================================================
