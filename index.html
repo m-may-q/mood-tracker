@@ -11,57 +11,61 @@
     <h1>Трекер настрою</h1>
   </header>
 
-  <main>
-    <section id="add-mood">
-      <h2>Відмітити настрій</h2>
-      <form>
-        <label for="mood-select">Настрій</label>
-        <select id="mood-select" name="mood">
-          <option value="great">Чудовий</option>
-          <option value="good">Добрий</option>
-          <option value="neutral">Нейтральний</option>
-          <option value="bad">Поганий</option>
-          <option value="terrible">Жахливий</option>
-        </select>
+  <div class="layout">
+    <main>
+      <section id="add-mood">
+        <h2>Відмітити настрій</h2>
+        <form>
+          <label for="mood-select">Настрій</label>
+          <select id="mood-select" name="mood">
+            <option value="great">Чудовий</option>
+            <option value="good">Добрий</option>
+            <option value="neutral">Нейтральний</option>
+            <option value="bad">Поганий</option>
+            <option value="terrible">Жахливий</option>
+          </select>
 
-        <label for="mood-note">Нотатка</label>
-        <textarea id="mood-note" name="note" placeholder="Що вплинуло на настрій сьогодні?"></textarea>
+          <label for="mood-note">Нотатка</label>
+          <textarea id="mood-note" name="note" placeholder="Що вплинуло на настрій сьогодні?"></textarea>
 
-        <label for="mood-date">Дата</label>
-        <input type="date" id="mood-date" name="date">
+          <label for="mood-date">Дата</label>
+          <input type="date" id="mood-date" name="date">
 
-        <button type="submit">Зберегти запис</button>
-      </form>
-    </section>
+          <button type="submit">Зберегти запис</button>
+        </form>
+      </section>
 
-    <section id="history">
-      <h2>Історія записів</h2>
+      <section id="history">
+        <h2>Історія записів</h2>
 
-      <article>
-        <h3>15 вересня 2026</h3>
-        <p>Настрій: добрий</p>
-        <p>День пройшов продуктивно, встигла все заплановане.</p>
-      </article>
+        <div class="cards">
+          <article class="card">
+            <h3>15 вересня 2026</h3>
+            <p>Настрій: добрий</p>
+            <p>День пройшов продуктивно, встигла все заплановане.</p>
+          </article>
 
-      <article>
-        <h3>14 вересня 2026</h3>
-        <p>Настрій: нейтральний</p>
-        <p>Звичайний робочий день, без особливих подій.</p>
-      </article>
+          <article class="card">
+            <h3>14 вересня 2026</h3>
+            <p>Настрій: нейтральний</p>
+            <p>Звичайний робочий день, без особливих подій.</p>
+          </article>
 
-      <article>
-        <h3>13 вересня 2026</h3>
-        <p>Настрій: чудовий</p>
-        <p>Зустрілася з друзями, гарно провела вихідний.</p>
-      </article>
-    </section>
-  </main>
+          <article class="card">
+            <h3>13 вересня 2026</h3>
+            <p>Настрій: чудовий</p>
+            <p>Зустрілася з друзями, гарно провела вихідний.</p>
+          </article>
+        </div>
+      </section>
+    </main>
 
-  <aside>
-    <h2>Статистика</h2>
-    <p>Записів за тиждень: 3</p>
-    <p>Переважний настрій: добрий</p>
-  </aside>
+    <aside>
+      <h2>Статистика</h2>
+      <p>Записів за тиждень: 3</p>
+      <p>Переважний настрій: добрий</p>
+    </aside>
+  </div>
 
   <footer>
     <p>Навчальний проєкт «Трекер настрою» · Програмування веб-застосувань, ФІОТ КПІ · 2026</p>

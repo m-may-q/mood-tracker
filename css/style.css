@@ -25,6 +25,11 @@ h1, h2, h3 {
   font-weight: 700;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ===== Header ===== */
 header {
   background: linear-gradient(135deg, #e6def7 0%, #fde3d0 100%);
@@ -39,11 +44,16 @@ header h1 {
   margin: 0;
 }
 
-/* ===== Main ===== */
-main {
-  max-width: 720px;
+/* ===== Загальний контейнер (main + aside) =====
+   Мобільний: один стовпчик (aside під main).
+   Десктоп (≥1024px): main і aside поруч через Grid. */
+.layout {
+  max-width: 960px;
   margin: 0 auto;
   padding: 24px 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
 }
 
 main section {
@@ -109,31 +119,40 @@ main section h2 {
   background-color: #a088cf;
 }
 
-/* ===== Картки записів (article) ===== */
-#history article {
+/* ===== Сітка карток записів (Grid) =====
+   Мобільний: 1 колонка.
+   Планшет (≥600px): 2 колонки.
+   Десктоп (≥1024px): main+aside стають двома колонками через .layout,
+   тому картки всередині main лишаються 2 колонками — для ширшого main
+   цього достатньо за варіантом завдання. */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.card {
   background-color: #fde3d0;
   border-radius: 16px;
   padding: 14px;
-  margin-bottom: 12px;
 }
 
-#history article h3 {
+.card h3 {
   font-size: 1.1rem;
   color: #6b4a2f;
 }
 
-#history article p {
+.card p {
   margin: 4px 0;
 }
 
 /* ===== Aside «Статистика» ===== */
 aside {
-  max-width: 720px;
-  margin: 0 auto 24px;
   padding: 20px;
   background-color: #e6def7;
   border-radius: 16px;
   text-align: center;
+  align-self: start;
 }
 
 aside h2 {
@@ -147,4 +166,23 @@ footer {
   text-align: center;
   font-size: 0.85rem;
   color: #7a7383;
+}
+
+/* =========================================================
+   Медіа-запити (mobile-first)
+   ========================================================= */
+
+/* Планшет: ≥600px */
+@media (min-width: 600px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Десктоп: ≥1024px */
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 3fr 1fr;
+    align-items: start;
+  }
 }
