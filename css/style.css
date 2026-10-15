@@ -28,11 +28,12 @@ img {
   --color-bg:        #faf7fb; /* нейтральний фон сторінки (60%) */
   --color-surface:    #ffffff;
   --color-text:       #2e2a35;
-  --color-text-muted: #7a7383;
+  --color-text-muted: #5c5566; /* ≥4.5:1 на фоні сторінки */
 
-  --color-primary:       #b9a4e0; /* лаванда — бренд-акцент (10%) */
+  --color-primary:       #5b4a8a; /* насичена лаванда — акцент (10%), білий текст на ній ≥4.5:1 */
+  --color-primary-soft:  #cbbbea; /* світла лаванда — фон шапки */
   --color-primary-dark:  #4a3b6b;
-  --color-primary-hover: #a088cf;
+  --color-primary-hover: #4a3b6b;
 
   --color-secondary: #d7f5e6; /* м'ята — другорядний колір (30%), фон форми */
   --color-secondary-border: #a9c9b8;
@@ -80,7 +81,7 @@ p  { font-size: 1rem; }     /* 16px, line-height 1.5 успадковано ві
 
 /* ===== Header ===== */
 header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-bg) 100%);
+  background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-accent-bg) 100%);
   padding: 24px;
   text-align: center;
   border-bottom: 1px solid #d8cdec;
@@ -191,7 +192,6 @@ main section {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  opacity: 0.8;
 }
 
 /* Кольори п'яти рівнів настрою — застосування чіткої вимоги */
