@@ -240,3 +240,8 @@ footer {
     align-items: start;
   }
 }
+
+/* Класи, що їх JavaScript додає за рівнем настрою (практикум 7):
+   good — настрій 3–5, hard — 1–2. Тонка смужка зліва доповнює колір картки. */
+.card.good { box-shadow: inset 4px 0 0 var(--mood-good-fg); }
+.card.hard { box-shadow: inset 4px 0 0 var(--mood-bad-fg); }
