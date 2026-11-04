@@ -1,5 +1,5 @@
-// Практична робота №8 — обробка подій і форми, клієнтська валідація (варіант 3: трекер настрою).
-// Основа — масив, функції та рендер з практикумів 6–7; тепер список поповнює форма.
+// Практична робота №9 — клієнт для API (fetch/async/await), варіант 3: трекер настрою.
+// Основа — масив, рендер і форма з практикумів 6–8; тепер додатково завантажуємо записи з API.
 
 console.log('script.js підключено');
 
@@ -22,6 +22,11 @@ const entries = [
 const listContainer = document.querySelector('#mood-history');
 const avgMoodOutput = document.querySelector('#avg-mood');
 const entriesCountOutput = document.querySelector('#entries-count');
+
+// Блок «Записи із сервера» (практикум 9): контейнер списку, повідомлення про стан і кнопка.
+const remoteContainer = document.querySelector('#remote-history');
+const remoteStatus = document.querySelector('#remote-status');
+const refreshButton = document.querySelector('#refresh-remote');
 
 // Форма додавання запису, її поля, повідомлення про помилку й лічильник символів нотатки.
 const form = document.querySelector('#mood-form');
@@ -52,30 +57,57 @@ const formatDate = isoDate =>
   new Date(isoDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })
     .replace(' р.', '');
 
-// Рендер історії: очищає контейнер і для кожного запису створює картку
-// (мітка настрою, h3 з датою, p з нотаткою), задає data-mood і класи за рівнем настрою.
-// Записи впорядковуємо за датою: найновіші першими (новий запис, доданий формою, стає на своє місце).
-function renderMoodHistory(records) {
-  listContainer.innerHTML = '';
+// Універсальний рендер карток у вказаний контейнер (функція з практикуму 7, узагальнена):
+// очищає контейнер і для кожного елемента створює картку — мітка, h3, p і, за потреби, додатковий рядок.
+// item: { label, title, text, meta?, mood? }. Якщо mood задано — картка отримує data-mood і класи рівня настрою.
+function renderCards(container, items) {
+  container.innerHTML = '';
 
-  [...records].sort((a, b) => b.date.localeCompare(a.date)).forEach(record => {
+  items.forEach(item => {
     const card = document.createElement('article');
     const moodLabel = document.createElement('span');
     const title = document.createElement('h3');
     const note = document.createElement('p');
 
     moodLabel.className = 'card__mood-label';
-    moodLabel.textContent = moodToLabel(record.mood);
-    title.textContent = formatDate(record.date);
-    note.textContent = record.note || 'Без нотатки';
+    moodLabel.textContent = item.label;
+    title.textContent = item.title;
+    note.textContent = item.text;
 
-    card.dataset.mood = record.mood;
-    card.classList.add('card', `card--${MOOD_KEYS[record.mood - 1]}`);
-    card.classList.add(record.mood >= 3 ? 'good' : 'hard');
+    card.classList.add('card');
+    if (item.mood) {
+      card.dataset.mood = item.mood;
+      card.classList.add(`card--${MOOD_KEYS[item.mood - 1]}`);
+      card.classList.add(item.mood >= 3 ? 'good' : 'hard');
+    } else {
+      card.classList.add('card--neutral');
+    }
 
     card.append(moodLabel, title, note);
-    listContainer.append(card);
+
+    if (item.meta) {
+      const meta = document.createElement('p');
+      meta.className = 'card__meta';
+      meta.textContent = item.meta;
+      card.append(meta);
+    }
+
+    container.append(card);
   });
+}
+
+// Рендер історії власних записів: найновіші першими; поля запису зіставляємо з полями картки.
+function renderMoodHistory(records) {
+  const items = [...records]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(record => ({
+      mood: record.mood,
+      label: moodToLabel(record.mood),
+      title: formatDate(record.date),
+      text: record.note || 'Без нотатки'
+    }));
+
+  renderCards(listContainer, items);
 }
 
 // Оновлює підсумки в блоці «Статистика»: змінює вміст уже наявних елементів.
@@ -140,6 +172,65 @@ form.addEventListener('submit', event => {
   updateNoteCounter();
   console.log('Додано запис:', newEntry);
 });
+
+
+// ===== Практикум 9: клієнт для API =====
+
+// API: JSONPlaceholder (мок-дані, без ключа) — https://jsonplaceholder.typicode.com
+// Коментарі до допису №1 трактуємо як записи настрою: name — заголовок, body — нотатка, email — автор.
+const API_URL = 'https://jsonplaceholder.typicode.com/comments?postId=1';
+const API_ERROR_MESSAGE = 'Записи тимчасово недоступні';
+
+// Показує або ховає стан завантаження: текст «Завантаження…» і заблокована кнопка «Оновити».
+function showLoading(isLoading) {
+  refreshButton.disabled = isLoading;
+  if (isLoading) {
+    remoteStatus.textContent = 'Завантаження…';
+    remoteStatus.classList.remove('is-error');
+  }
+}
+
+// Виводить зрозуміле користувачу повідомлення про помилку й очищає список.
+function showError(message) {
+  remoteContainer.innerHTML = '';
+  remoteStatus.textContent = message;
+  remoteStatus.classList.add('is-error');
+}
+
+// Завантажує записи з API (JSONPlaceholder, /comments?postId=1) і виводить їх тією ж функцією renderCards.
+// Мережевий збій (reject від fetch) і HTTP-помилка (response.ok === false) обробляються в одному catch.
+async function loadRemoteEntries() {
+  showLoading(true);
+  try {
+    const response = await fetch(API_URL);
+    if (!response.ok) {
+      throw new Error(`Сервер відповів кодом ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Відповідь API:', data);
+
+    // Зіставляємо поля API з полями картки: name → title, body → text, email → meta.
+    const items = data.map(comment => ({
+      label: 'Запис із сервера',
+      title: comment.name,
+      text: comment.body,
+      meta: `Автор: ${comment.email}`
+    }));
+
+    renderCards(remoteContainer, items);
+    remoteStatus.textContent = items.length > 0
+      ? `Завантажено записів: ${items.length}`
+      : 'Записів поки немає';
+  } catch (error) {
+    showError(API_ERROR_MESSAGE);
+    console.error('Помилка завантаження записів:', error);
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
+refreshButton.addEventListener('click', loadRemoteEntries);
+loadRemoteEntries();
 
 // Контрольний вивід у консоль (як у практикумі 6).
 const average = averageMood(entries);

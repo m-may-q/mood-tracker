@@ -269,3 +269,40 @@ footer {
 #add-mood input.is-invalid {
   border-color: #8c1d1d;
 }
+
+/* ===== Записи із сервера (практикум 9) ===== */
+#remote button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#remote button:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+#remote button:disabled {
+  background-color: #6b6577; /* білий текст ≥4.5:1 */
+  cursor: not-allowed;
+}
+
+.remote-status {
+  margin: 12px 0;
+  color: var(--color-text);
+}
+
+.remote-status.is-error {
+  color: #8c1d1d; /* контраст ≥4.5:1 на фоні сторінки */
+  font-weight: 600;
+}
+
+.card__meta {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  font-style: italic;
+}
