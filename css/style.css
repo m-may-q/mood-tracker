@@ -245,3 +245,27 @@ footer {
    good — настрій 3–5, hard — 1–2. Тонка смужка зліва доповнює колір картки. */
 .card.good { box-shadow: inset 4px 0 0 var(--mood-good-fg); }
 .card.hard { box-shadow: inset 4px 0 0 var(--mood-bad-fg); }
+
+/* ===== Підказки, лічильник і повідомлення про помилки у формі (практикум 8) ===== */
+.form-help,
+.form-error {
+  margin: -10px 0 16px;
+  font-size: 0.875rem;
+}
+
+.form-help {
+  color: #3d3748; /* контраст ≥4.5:1 на фоні форми */
+}
+
+.form-error {
+  color: #8c1d1d; /* контраст ≥4.5:1 на фоні форми */
+  font-weight: 600;
+}
+
+.form-error:empty {
+  display: none;
+}
+
+#add-mood input.is-invalid {
+  border-color: #8c1d1d;
+}

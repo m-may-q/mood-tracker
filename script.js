@@ -1,5 +1,5 @@
-// Практична робота №7 — маніпуляція DOM (варіант 3: трекер настрою).
-// Основа — дані й функції з практикуму 6; тепер результат виводимо на сторінку.
+// Практична робота №8 — обробка подій і форми, клієнтська валідація (варіант 3: трекер настрою).
+// Основа — масив, функції та рендер з практикумів 6–7; тепер список поповнює форма.
 
 console.log('script.js підключено');
 
@@ -22,6 +22,14 @@ const entries = [
 const listContainer = document.querySelector('#mood-history');
 const avgMoodOutput = document.querySelector('#avg-mood');
 const entriesCountOutput = document.querySelector('#entries-count');
+
+// Форма додавання запису, її поля, повідомлення про помилку й лічильник символів нотатки.
+const form = document.querySelector('#mood-form');
+const dateInput = document.querySelector('#mood-date');
+const moodInput = document.querySelector('#mood-value');
+const noteInput = document.querySelector('#mood-note');
+const moodError = document.querySelector('#mood-error');
+const noteCounter = document.querySelector('#note-counter');
 
 // Назви рівнів настрою 1–5 (індекс = рівень − 1) і відповідні ключі для CSS-класів.
 const MOOD_LABELS = ['Жахливий', 'Поганий', 'Нейтральний', 'Добрий', 'Чудовий'];
@@ -46,11 +54,11 @@ const formatDate = isoDate =>
 
 // Рендер історії: очищає контейнер і для кожного запису створює картку
 // (мітка настрою, h3 з датою, p з нотаткою), задає data-mood і класи за рівнем настрою.
-// Найновіші записи показуємо першими.
+// Записи впорядковуємо за датою: найновіші першими (новий запис, доданий формою, стає на своє місце).
 function renderMoodHistory(records) {
   listContainer.innerHTML = '';
 
-  [...records].reverse().forEach(record => {
+  [...records].sort((a, b) => b.date.localeCompare(a.date)).forEach(record => {
     const card = document.createElement('article');
     const moodLabel = document.createElement('span');
     const title = document.createElement('h3');
@@ -59,7 +67,7 @@ function renderMoodHistory(records) {
     moodLabel.className = 'card__mood-label';
     moodLabel.textContent = moodToLabel(record.mood);
     title.textContent = formatDate(record.date);
-    note.textContent = record.note;
+    note.textContent = record.note || 'Без нотатки';
 
     card.dataset.mood = record.mood;
     card.classList.add('card', `card--${MOOD_KEYS[record.mood - 1]}`);
@@ -73,13 +81,65 @@ function renderMoodHistory(records) {
 // Оновлює підсумки в блоці «Статистика»: змінює вміст уже наявних елементів.
 function updateSummary(records) {
   const average = averageMood(records);
-  entriesCountOutput.textContent = `Записів за тиждень: ${records.length}`;
+  entriesCountOutput.textContent = `Усього записів: ${records.length}`;
   avgMoodOutput.textContent =
     `Середній настрій: ${average.toFixed(2)} (${moodToLabel(Math.round(average))})`;
 }
 
 renderMoodHistory(entries);
 updateSummary(entries);
+
+// Власна перевірка настрою на кожну зміну поля: значення має бути цілим числом від 1 до 5.
+// Повідомлення показуємо і через setCustomValidity (його бачить браузер при сабміті),
+// і текстом під полем. Порожнє поле лишаємо стандартному required.
+function validateMood() {
+  const raw = moodInput.value;
+  const value = Number(raw);
+  const isOutOfRange = raw !== '' && (!Number.isInteger(value) || value < 1 || value > 5);
+
+  if (isOutOfRange) {
+    const message = 'Настрій має бути цілим числом від 1 до 5';
+    moodInput.setCustomValidity(message);
+    moodError.textContent = message;
+    moodInput.classList.add('is-invalid');
+  } else {
+    moodInput.setCustomValidity('');
+    moodError.textContent = '';
+    moodInput.classList.remove('is-invalid');
+  }
+}
+
+moodInput.addEventListener('input', validateMood);
+
+// Лічильник символів нотатки: оновлюється на кожне натискання клавіші (подія input).
+function updateNoteCounter() {
+  const left = noteInput.maxLength - noteInput.value.length;
+  noteCounter.textContent = `Залишилось символів: ${left}`;
+}
+
+noteInput.addEventListener('input', updateNoteCounter);
+
+// Надсилання форми: скасовуємо перезавантаження, зчитуємо поля, додаємо запис у масив,
+// перемальовуємо список і підсумок, очищаємо форму. Порожні/хибні поля до цього місця
+// не доходять — їх зупиняють required, min/max і власна перевірка настрою.
+form.addEventListener('submit', event => {
+  event.preventDefault();
+
+  const newEntry = {
+    date: dateInput.value,
+    mood: Number(moodInput.value),
+    note: noteInput.value.trim()
+  };
+
+  entries.push(newEntry);
+  renderMoodHistory(entries);
+  updateSummary(entries);
+
+  form.reset();
+  validateMood();
+  updateNoteCounter();
+  console.log('Додано запис:', newEntry);
+});
 
 // Контрольний вивід у консоль (як у практикумі 6).
 const average = averageMood(entries);
