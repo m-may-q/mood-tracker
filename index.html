@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Трекер настрою</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Vue 3 через CDN (без збірки). Обидва скрипти defer: виконуються по порядку, Vue — першим. -->
+  <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -36,24 +38,16 @@
       <section id="history">
         <h2>Історія записів</h2>
 
+        <!-- Контейнер змонтовано як застосунок Vue (практикум 10): список будує компонент MoodEntry.
+             Статичні картки з практикуму 2 прибрано — їх замінює v-for. -->
         <div class="cards" id="mood-history">
-          <article class="card card--good">
-            <span class="card__mood-label">Добрий</span>
-            <h3>15 вересня 2026</h3>
-            <p>День пройшов продуктивно, встигла все заплановане.</p>
-          </article>
-
-          <article class="card card--neutral">
-            <span class="card__mood-label">Нейтральний</span>
-            <h3>14 вересня 2026</h3>
-            <p>Звичайний робочий день, без особливих подій.</p>
-          </article>
-
-          <article class="card card--great">
-            <span class="card__mood-label">Чудовий</span>
-            <h3>13 вересня 2026</h3>
-            <p>Зустрілася з друзями, гарно провела вихідний.</p>
-          </article>
+          <mood-entry
+            v-for="entry in sortedEntries"
+            :key="entry.id"
+            :date="entry.date"
+            :mood="entry.mood"
+            :note="entry.note"
+          ></mood-entry>
         </div>
       </section>
 

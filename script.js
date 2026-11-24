@@ -1,25 +1,11 @@
-// Практична робота №9 — клієнт для API (fetch/async/await), варіант 3: трекер настрою.
-// Основа — масив, рендер і форма з практикумів 6–8; тепер додатково завантажуємо записи з API.
+// Практична робота №10 — бібліотеки й фреймворки, варіант 3: трекер настрою.
+// Вибрано Vue 3 (CDN, без збірки): шаблон близький до звичайного HTML, не потрібні JSX і Babel,
+// а computed-властивості точно відповідають завданню про похідне значення emoji.
+// Список історії записів тепер рендерить компонент MoodEntry; форма (п. 8) і запит до API (п. 9) лишились без змін.
 
 console.log('script.js підключено');
 
-// Прибираємо статичні картки-заглушки з практикуму 2: вони лишились у HTML
-// лише як орієнтир структури, а список тепер будується з масиву.
-document.querySelectorAll('#mood-history .card').forEach(card => card.remove());
-
-// Записи настрою за тиждень: mood — число від 1 (жахливий) до 5 (чудовий).
-const entries = [
-  { date: '2026-09-09', mood: 3, note: 'Повільний старт тижня, мало енергії.' },
-  { date: '2026-09-10', mood: 4, note: 'Гарна погода й вдалі пари.' },
-  { date: '2026-09-11', mood: 2, note: 'Багато завдань, відчувалася втома.' },
-  { date: '2026-09-12', mood: 4, note: 'Закрила лабораторну, стало легше.' },
-  { date: '2026-09-13', mood: 5, note: 'Зустрілася з друзями, гарно провела вихідний.' },
-  { date: '2026-09-14', mood: 3, note: 'Звичайний робочий день, без особливих подій.' },
-  { date: '2026-09-15', mood: 4, note: 'День пройшов продуктивно, встигла все заплановане.' }
-];
-
-// Контейнер історії записів і елементи підсумку в блоці «Статистика».
-const listContainer = document.querySelector('#mood-history');
+// Елементи підсумку в блоці «Статистика».
 const avgMoodOutput = document.querySelector('#avg-mood');
 const entriesCountOutput = document.querySelector('#entries-count');
 
@@ -96,19 +82,9 @@ function renderCards(container, items) {
   });
 }
 
-// Рендер історії власних записів: найновіші першими; поля запису зіставляємо з полями картки.
-function renderMoodHistory(records) {
-  const items = [...records]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(record => ({
-      mood: record.mood,
-      label: moodToLabel(record.mood),
-      title: formatDate(record.date),
-      text: record.note || 'Без нотатки'
-    }));
-
-  renderCards(listContainer, items);
-}
+// Стару функцію renderMoodHistory (ручний рендер через createElement з практикуму 7) ЗАМІНЕНО
+// компонентом MoodEntry нижче: Vue сам перемальовує список, коли змінюється масив entries.
+// Функцію renderCards залишено лише для блоку «Записи із сервера» (практикум 9).
 
 // Оновлює підсумки в блоці «Статистика»: змінює вміст уже наявних елементів.
 function updateSummary(records) {
@@ -118,8 +94,84 @@ function updateSummary(records) {
     `Середній настрій: ${average.toFixed(2)} (${moodToLabel(Math.round(average))})`;
 }
 
-renderMoodHistory(entries);
-updateSummary(entries);
+// ===== Практикум 10: Vue 3 =====
+
+// Компонент одного запису. Дані приходять через props, глобальних змінних компонент не читає.
+// emoji, назва рівня та класи — похідні (computed) значення: вони виводяться з props.mood
+// і ніде окремо не зберігаються, тому не можуть розійтися з числом настрою.
+const MoodEntry = {
+  props: {
+    date: { type: String, required: true },
+    mood: { type: Number, required: true },
+    note: { type: String, default: '' }
+  },
+  computed: {
+    emoji() {
+      return ['😢', '🙁', '😐', '🙂', '😄'][this.mood - 1] ?? '❔';
+    },
+    label() {
+      return moodToLabel(this.mood);
+    },
+    moodKey() {
+      return MOOD_KEYS[this.mood - 1];
+    },
+    prettyDate() {
+      return formatDate(this.date);
+    }
+  },
+  template: `
+    <article class="card" :class="['card--' + moodKey, mood >= 3 ? 'good' : 'hard']" :data-mood="mood">
+      <span class="card__mood-label">
+        <span class="card__emoji" aria-hidden="true">{{ emoji }}</span>{{ label }}
+      </span>
+      <h3>{{ prettyDate }}</h3>
+      <p>{{ note || 'Без нотатки' }}</p>
+    </article>`
+};
+
+// Кореневий застосунок змонтовано на контейнер історії #mood-history; його вміст у index.html —
+// шаблон із v-for. Масив записів живе в data() (реактивний стан), а не в зовнішній змінній.
+const app = Vue.createApp({
+  components: { MoodEntry },
+  data() {
+    return {
+      nextId: 8,
+      entries: [
+        { id: 1, date: '2026-09-09', mood: 3, note: 'Повільний старт тижня, мало енергії.' },
+        { id: 2, date: '2026-09-10', mood: 4, note: 'Гарна погода й вдалі пари.' },
+        { id: 3, date: '2026-09-11', mood: 2, note: 'Багато завдань, відчувалася втома.' },
+        { id: 4, date: '2026-09-12', mood: 4, note: 'Закрила лабораторну, стало легше.' },
+        { id: 5, date: '2026-09-13', mood: 5, note: 'Зустрілася з друзями, гарно провела вихідний.' },
+        { id: 6, date: '2026-09-14', mood: 3, note: 'Звичайний робочий день, без особливих подій.' },
+        { id: 7, date: '2026-09-15', mood: 4, note: 'День пройшов продуктивно, встигла все заплановане.' }
+      ]
+    };
+  },
+  computed: {
+    // Найновіші записи першими; копія масиву, щоб не змінювати порядок у стані.
+    sortedEntries() {
+      return [...this.entries].sort((a, b) => b.date.localeCompare(a.date));
+    }
+  },
+  watch: {
+    // Блок «Статистика» оновлюється щоразу, коли змінюється масив записів.
+    entries: {
+      handler(records) {
+        updateSummary(records);
+      },
+      deep: true,
+      immediate: true
+    }
+  },
+  methods: {
+    // Додає запис: нове значення потрапляє в реактивний масив, Vue перемальовує список.
+    addEntry(entry) {
+      this.entries.push({ id: this.nextId++, ...entry });
+    }
+  }
+});
+
+const vm = app.mount('#mood-history');
 
 // Власна перевірка настрою на кожну зміну поля: значення має бути цілим числом від 1 до 5.
 // Повідомлення показуємо і через setCustomValidity (його бачить браузер при сабміті),
@@ -151,8 +203,8 @@ function updateNoteCounter() {
 
 noteInput.addEventListener('input', updateNoteCounter);
 
-// Надсилання форми: скасовуємо перезавантаження, зчитуємо поля, додаємо запис у масив,
-// перемальовуємо список і підсумок, очищаємо форму. Порожні/хибні поля до цього місця
+// Надсилання форми: скасовуємо перезавантаження, зчитуємо поля, передаємо запис застосунку Vue
+// (він сам перемальовує список і статистику), очищаємо форму. Порожні/хибні поля до цього місця
 // не доходять — їх зупиняють required, min/max і власна перевірка настрою.
 form.addEventListener('submit', event => {
   event.preventDefault();
@@ -163,9 +215,8 @@ form.addEventListener('submit', event => {
     note: noteInput.value.trim()
   };
 
-  entries.push(newEntry);
-  renderMoodHistory(entries);
-  updateSummary(entries);
+  // Додаємо запис у реактивний стан Vue: список і статистика оновляться автоматично.
+  vm.addEntry(newEntry);
 
   form.reset();
   validateMood();
@@ -233,8 +284,8 @@ refreshButton.addEventListener('click', loadRemoteEntries);
 loadRemoteEntries();
 
 // Контрольний вивід у консоль (як у практикумі 6).
-const average = averageMood(entries);
-console.log(`Середній настрій за ${entries.length} днів: ${average.toFixed(2)}`);
+const average = averageMood(vm.entries);
+console.log(`Середній настрій за ${vm.entries.length} днів: ${average.toFixed(2)}`);
 if (average >= 3) {
   console.log('Підсумок: гарний тиждень');
 } else {

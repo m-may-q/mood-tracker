@@ -306,3 +306,10 @@ footer {
   font-size: 0.875rem;
   font-style: italic;
 }
+
+/* ===== Емодзі в картці запису (практикум 10) ===== */
+.card__emoji {
+  margin-right: 6px;
+  font-size: 1.1rem;
+  vertical-align: middle;
+}
