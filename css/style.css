@@ -313,3 +313,14 @@ footer {
   font-size: 1.1rem;
   vertical-align: middle;
 }
+
+/* ===== Повідомлення про помилку сховища (практикум 11) ===== */
+.storage-status {
+  margin: 0 0 12px;
+  color: #8c1d1d; /* контраст ≥4.5:1 на фоні сторінки */
+  font-weight: 600;
+}
+
+.storage-status:empty {
+  display: none;
+}

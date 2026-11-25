@@ -1,11 +1,13 @@
-// Практична робота №10 — бібліотеки й фреймворки, варіант 3: трекер настрою.
+// Практична робота №11 (етап 2) — IndexedDB замість localStorage, варіант 3: трекер настрою.
+// Практикум 10 — бібліотеки й фреймворки (Vue 3).
 // Вибрано Vue 3 (CDN, без збірки): шаблон близький до звичайного HTML, не потрібні JSX і Babel,
 // а computed-властивості точно відповідають завданню про похідне значення emoji.
 // Список історії записів тепер рендерить компонент MoodEntry; форма (п. 8) і запит до API (п. 9) лишились без змін.
 
 console.log('script.js підключено');
 
-// Елементи підсумку в блоці «Статистика».
+// Повідомлення про помилку сховища (IndexedDB) і елементи підсумку в блоці «Статистика».
+const storageStatus = document.querySelector('#storage-status');
 const avgMoodOutput = document.querySelector('#avg-mood');
 const entriesCountOutput = document.querySelector('#entries-count');
 
@@ -88,6 +90,11 @@ function renderCards(container, items) {
 
 // Оновлює підсумки в блоці «Статистика»: змінює вміст уже наявних елементів.
 function updateSummary(records) {
+  if (records.length === 0) {
+    entriesCountOutput.textContent = 'Усього записів: 0';
+    avgMoodOutput.textContent = 'Середній настрій: —';
+    return;
+  }
   const average = averageMood(records);
   entriesCountOutput.textContent = `Усього записів: ${records.length}`;
   avgMoodOutput.textContent =
@@ -129,23 +136,118 @@ const MoodEntry = {
     </article>`
 };
 
-// Кореневий застосунок змонтовано на контейнер історії #mood-history; його вміст у index.html —
-// шаблон із v-for. Масив записів живе в data() (реактивний стан), а не в зовнішній змінній.
+// ===== Практикум 11, етап 2: IndexedDB =====
+
+// Схема: база MoodDB (версія 1), одне сховище moodEntries, keyPath 'id' з автоінкрементом.
+const DB_NAME = 'MoodDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'moodEntries';
+
+// Ключ у localStorage, під яким лежали записи на етапі 1 (джерело для міграції), і прапорець міграції.
+const STORAGE_KEY = 'moodEntries';
+const MIGRATED_KEY = 'migrated';
+
+// Читає масив із localStorage (використовується лише для одноразової міграції).
+// Якщо даних немає або рядок пошкоджений — повертає порожній масив.
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.error('Пошкоджені дані в localStorage:', error);
+    return [];
+  }
+}
+
+// Відкриває базу даних і повертає Promise з об'єктом db.
+// onupgradeneeded спрацьовує лише при створенні бази (або підвищенні версії) — тут створюємо сховище.
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = event => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Створення/оновлення: put() додає запис або замінює наявний з тим самим id.
+// Для нового запису без id браузер сам видає наступний номер (autoIncrement) — повертаємо його.
+async function addItem(item) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const request = tx.objectStore(STORE_NAME).put(item);
+    tx.oncomplete = () => resolve(request.result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Читання: повертає всю історію записів масивом.
+async function getAllItems() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const request = tx.objectStore(STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Оновлення наявного запису (той самий id — без дубліката).
+const updateItem = addItem;
+
+// Видалення запису за id.
+async function deleteItem(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Початкові записи для першого запуску (без id: їх видасть autoIncrement).
+function defaultEntries() {
+  return [
+    { date: '2026-09-09', mood: 3, note: 'Повільний старт тижня, мало енергії.' },
+    { date: '2026-09-10', mood: 4, note: 'Гарна погода й вдалі пари.' },
+    { date: '2026-09-11', mood: 2, note: 'Багато завдань, відчувалася втома.' },
+    { date: '2026-09-12', mood: 4, note: 'Закрила лабораторну, стало легше.' },
+    { date: '2026-09-13', mood: 5, note: 'Зустрілася з друзями, гарно провела вихідний.' },
+    { date: '2026-09-14', mood: 3, note: 'Звичайний робочий день, без особливих подій.' },
+    { date: '2026-09-15', mood: 4, note: 'День пройшов продуктивно, встигла все заплановане.' }
+  ];
+}
+
+// Одноразова міграція: якщо сховище порожнє, а в localStorage лежать записи з етапу 1 —
+// переносимо їх в IndexedDB і ставимо прапорець migrated, щоб не повторювати перенесення.
+async function migrateFromLocalStorage() {
+  if (localStorage.getItem(MIGRATED_KEY) === 'true') return;
+  const existing = await getAllItems();
+  const legacy = loadFromLocalStorage();
+  if (existing.length === 0 && legacy.length > 0) {
+    for (const item of legacy) {
+      await addItem(item);
+    }
+    console.log(`Міграція: перенесено записів із localStorage — ${legacy.length}`);
+  }
+  localStorage.setItem(MIGRATED_KEY, 'true');
+}
+
+// Кореневий застосунок Vue (контейнер #mood-history, шаблон із v-for — в index.html).
+// Джерело даних тепер IndexedDB: список читаємо через getAllItems() і оновлюємо після кожної операції.
 const app = Vue.createApp({
   components: { MoodEntry },
   data() {
-    return {
-      nextId: 8,
-      entries: [
-        { id: 1, date: '2026-09-09', mood: 3, note: 'Повільний старт тижня, мало енергії.' },
-        { id: 2, date: '2026-09-10', mood: 4, note: 'Гарна погода й вдалі пари.' },
-        { id: 3, date: '2026-09-11', mood: 2, note: 'Багато завдань, відчувалася втома.' },
-        { id: 4, date: '2026-09-12', mood: 4, note: 'Закрила лабораторну, стало легше.' },
-        { id: 5, date: '2026-09-13', mood: 5, note: 'Зустрілася з друзями, гарно провела вихідний.' },
-        { id: 6, date: '2026-09-14', mood: 3, note: 'Звичайний робочий день, без особливих подій.' },
-        { id: 7, date: '2026-09-15', mood: 4, note: 'День пройшов продуктивно, встигла все заплановане.' }
-      ]
-    };
+    return { entries: [], storageError: '' };
   },
   computed: {
     // Найновіші записи першими; копія масиву, щоб не змінювати порядок у стані.
@@ -161,12 +263,47 @@ const app = Vue.createApp({
       },
       deep: true,
       immediate: true
+    },
+    storageError(message) {
+      storageStatus.textContent = message;
     }
   },
   methods: {
-    // Додає запис: нове значення потрапляє в реактивний масив, Vue перемальовує список.
-    addEntry(entry) {
-      this.entries.push({ id: this.nextId++, ...entry });
+    // Початкове завантаження: міграція (за потреби), заповнення порожньої бази, читання історії.
+    // Якщо IndexedDB недоступна, показуємо повідомлення і працюємо лише в пам'яті.
+    async init() {
+      try {
+        await migrateFromLocalStorage();
+        let items = await getAllItems();
+        if (items.length === 0) {
+          for (const item of defaultEntries()) {
+            await addItem(item);
+          }
+          items = await getAllItems();
+        }
+        this.entries = items;
+      } catch (error) {
+        console.error('IndexedDB недоступна:', error);
+        this.storageError = 'Не вдалося відкрити сховище браузера: записи не збережуться після перезавантаження сторінки.';
+        this.entries = defaultEntries().map((item, index) => ({ id: index + 1, ...item }));
+      }
+    },
+
+    // Додає запис у IndexedDB і перечитує список із бази.
+    async addEntry(entry) {
+      if (this.storageError) {
+        // Запасний варіант без бази: запис живе лише в пам'яті.
+        const nextId = this.entries.reduce((max, e) => Math.max(max, e.id), 0) + 1;
+        this.entries.push({ id: nextId, ...entry });
+        return;
+      }
+      try {
+        await addItem(entry);
+        this.entries = await getAllItems();
+      } catch (error) {
+        console.error('Не вдалося зберегти запис:', error);
+        this.storageError = 'Не вдалося зберегти запис у сховище браузера.';
+      }
     }
   }
 });
@@ -206,7 +343,7 @@ noteInput.addEventListener('input', updateNoteCounter);
 // Надсилання форми: скасовуємо перезавантаження, зчитуємо поля, передаємо запис застосунку Vue
 // (він сам перемальовує список і статистику), очищаємо форму. Порожні/хибні поля до цього місця
 // не доходять — їх зупиняють required, min/max і власна перевірка настрою.
-form.addEventListener('submit', event => {
+form.addEventListener('submit', async event => {
   event.preventDefault();
 
   const newEntry = {
@@ -215,8 +352,8 @@ form.addEventListener('submit', event => {
     note: noteInput.value.trim()
   };
 
-  // Додаємо запис у реактивний стан Vue: список і статистика оновляться автоматично.
-  vm.addEntry(newEntry);
+  // Зберігаємо запис в IndexedDB і перечитуємо список: Vue сам оновить картки й статистику.
+  await vm.addEntry(newEntry);
 
   form.reset();
   validateMood();
@@ -283,11 +420,14 @@ async function loadRemoteEntries() {
 refreshButton.addEventListener('click', loadRemoteEntries);
 loadRemoteEntries();
 
-// Контрольний вивід у консоль (як у практикумі 6).
-const average = averageMood(vm.entries);
-console.log(`Середній настрій за ${vm.entries.length} днів: ${average.toFixed(2)}`);
-if (average >= 3) {
-  console.log('Підсумок: гарний тиждень');
-} else {
-  console.log('Підсумок: важкий тиждень');
-}
+// Контрольний вивід у консоль (як у практикумі 6) — після завантаження записів із бази.
+vm.init().then(() => {
+  if (vm.entries.length === 0) return;
+  const average = averageMood(vm.entries);
+  console.log(`Середній настрій за ${vm.entries.length} днів: ${average.toFixed(2)}`);
+  if (average >= 3) {
+    console.log('Підсумок: гарний тиждень');
+  } else {
+    console.log('Підсумок: важкий тиждень');
+  }
+});
